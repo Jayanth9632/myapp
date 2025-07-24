@@ -37,6 +37,46 @@ myapp/ ├── src/                         # Java source code ├── pom.x
 9. **Prometheus alerts on anomalies**
 
 ---
+## 🗄️ Database Integration
+
+This project includes a MySQL database to persist application data.
+
+### ✅ Spring Boot Configuration
+
+```properties
+spring.datasource.url=jdbc:mysql://mysql:3306/myappdb
+spring.datasource.username=root
+spring.datasource.password=rootpass
+spring.jpa.hibernate.ddl-auto=update
+✅ Kubernetes Deployment
+# mysql-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  ...
+# mysql-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  ...
+📊 Monitoring & Alerting
+- Prometheus scrapes metrics from the application and MySQL
+- Grafana dashboards visualize JVM, HTTP, and DB metrics
+- Alert rules in alerts.yml notify on high error rates and resource usage
+✅ MySQL Exporter Setup
+docker run -d \
+  -p 9104:9104 \
+  --name mysql-exporter \
+  -e DATA_SOURCE_NAME="root:rootpass@(localhost:3306)/" \
+  prom/mysqld-exporter
+Prometheus config:
+- job_name: 'mysql'
+  static_configs:
+    - targets: ['localhost:9104']
 
 ## > Infrastructure Provisioning with Terraform
 
