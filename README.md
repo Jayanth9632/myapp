@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Demo Spring Boot Application
 
 This is a simple REST API built with Spring Boot, containerized with Docker, and deployed using Jenkins and Kubernetes.
@@ -12,3 +13,7 @@ This is a simple REST API built with Spring Boot, containerized with Docker, and
 - SonarQube
 - Trivy
 - Prometheus & Grafana
+=======
+# myapp
+Myfirstapplication
+>>>>>>> 791e326d1957b06536f99507b951cb502bc84140
