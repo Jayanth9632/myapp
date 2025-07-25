@@ -2,11 +2,10 @@ pipeline {
     agent any
 
     environment {
-        GIT_CREDENTIALS_ID = 'b4961a3a-ef4b-4906-a62e-6ee49ffb6de2'  // Your GitHub PAT credential ID
-        SONARQUBE_ENV = 'MySonarQube'                               // SonarQube server name
-        DOCKER_IMAGE = 'jayanth9632/myapp'                          // DockerHub repo name
-        DOCKER_CREDENTIALS_ID = 'docker-hub-creds'                  // DockerHub credentials ID
-        KUBE_CONFIG = credentials('kubeconfig-creds')               // Kubernetes kubeconfig file
+        GIT_CREDENTIALS_ID = 'b4961a3a-ef4b-4906-a62e-6ee49ffb6de2'
+        SONARQUBE_ENV = 'MySonarQube'
+        DOCKER_IMAGE = 'jayanth9632/myapp'
+        DOCKER_CREDENTIALS_ID = 'docker-hub-creds'
     }
 
     stages {
@@ -47,17 +46,6 @@ pipeline {
                         def app = docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
                         app.push()
                     }
-                }
-            }
-        }
-
-        stage('🚀 Kubernetes Deploy') {
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-creds', variable: 'KUBECONFIG')]) {
-                    sh '''
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
-                    '''
                 }
             }
         }
