@@ -1,15 +1,15 @@
 provider "aws" {
-  region = var.aws_region
+  region = "ap-south-1"
 }
 
 resource "aws_key_pair" "jenkins_key" {
-  key_name   = var.key_name
-  public_key = file(var.public_key_path)
+  key_name   = "jenkins-key"
+  public_key = file("~/.ssh/id_rsa.pub")  # Update path if needed
 }
 
 resource "aws_security_group" "jenkins_sg" {
   name        = "jenkins-sg"
-  description = "Allow SSH and Jenkins access"
+  description = "Allow Jenkins and SSH access"
 
   ingress {
     from_port   = 22
@@ -25,13 +25,6 @@ resource "aws_security_group" "jenkins_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    from_port   = 9000
-    to_port     = 9000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -41,28 +34,30 @@ resource "aws_security_group" "jenkins_sg" {
 }
 
 resource "aws_instance" "jenkins_ec2" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-  key_name      = aws_key_pair.jenkins_key.key_name
-  security_groups = [aws_security_group.jenkins_sg.name]
+  ami                    = "ami-0f5ee92e2d63afc18"  # Ubuntu 22.04 LTS in ap-south-1
+  instance_type          = var.instance_type
+  key_name               = aws_key_pair.jenkins_key.key_name
+  vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
 
   user_data = <<-EOT
-              #!/bin/bash
-              sudo apt update -y
-              sudo apt install openjdk-17-jdk -y
-              sudo apt install docker.io -y
-              sudo systemctl start docker
-              sudo usermod -aG docker ubuntu
-              sudo apt install -y wget
-              wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
-              sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-              sudo apt update
-              sudo apt install jenkins -y
-              sudo systemctl start jenkins
-              sudo systemctl enable jenkins
-            EOT
+    #!/bin/bash
+    sudo apt update -y
+    sudo apt install openjdk-11-jdk -y
+    sudo apt install docker.io -y
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    sudo usermod -aG docker ubuntu
+    sudo apt install -y wget gnupg
+    wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+    sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+    sudo apt update
+    sudo apt install jenkins -y
+    sudo systemctl start jenkins
+    sudo systemctl enable jenkins
+  EOT
 
   tags = {
-    Name = "Jenkins-EC2"
+    Name        = "Jenkins-EC2"
+    Environment = "Dev"
   }
 }
