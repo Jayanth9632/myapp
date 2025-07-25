@@ -4,7 +4,7 @@ provider "aws" {
 
 resource "aws_key_pair" "jenkins_key" {
   key_name   = "jenkins-key"
-  public_key = file("~/.ssh/id_rsa.pub")  # Update path if needed
+  public_key = file("~/.ssh/id_rsa.pub")
 }
 
 resource "aws_security_group" "jenkins_sg" {
@@ -34,20 +34,24 @@ resource "aws_security_group" "jenkins_sg" {
 }
 
 resource "aws_instance" "jenkins_ec2" {
-  ami                    = "ami-0f5ee92e2d63afc18"  # ✅ Verified for ap-south-1
-  instance_type          = var.instance_type
+  ami                    = "ami-06a644026f43160a5"
+  instance_type          = "t2.micro"
   key_name               = aws_key_pair.jenkins_key.key_name
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
+
+  tags = {
+    Name        = "Jenkins-EC2"
+    Environment = "Dev"
+  }
 
   user_data = <<-EOT
     #!/bin/bash
     sudo apt update -y
-    sudo apt install openjdk-11-jdk -y
+    sudo apt install openjdk-17-jdk -y
     sudo apt install docker.io -y
     sudo systemctl start docker
-    sudo systemctl enable docker
     sudo usermod -aG docker ubuntu
-    sudo apt install -y wget gnupg
+    sudo apt install -y wget
     wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
     sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
     sudo apt update
@@ -55,9 +59,4 @@ resource "aws_instance" "jenkins_ec2" {
     sudo systemctl start jenkins
     sudo systemctl enable jenkins
   EOT
-
-  tags = {
-    Name        = "Jenkins-EC2"
-    Environment = "Dev"
-  }
 }
