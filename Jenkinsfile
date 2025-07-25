@@ -1,51 +1,69 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    DOCKER_IMAGE = 'your-dockerhub-username/demo:latest'
-    SONARQUBE_ENV = 'MySonarQube'
-  }
+    environment {
+        // Docker image name (replace with your actual Docker Hub username)
+        DOCKER_IMAGE = 'your-dockerhub-username/demo:latest'
 
-  stages {
-    stage('Checkout') {
-      steps {
-        git 'https://github.com/your-repo/myapp.git'
-      }
+        // SonarQube server name configured in Jenkins
+        SONARQUBE_ENV = 'MySonarQube'
+
+        // Jenkins credentials IDs
+        GIT_CREDENTIALS_ID = 'github-pat'          // GitHub PAT
+        DOCKER_CREDENTIALS_ID = 'dockerhub-creds'  // Docker Hub login
     }
 
-    stage('SonarQube Analysis') {
-      steps {
-        withSonarQubeEnv("${SONARQUBE_ENV}") {
-          sh 'mvn clean verify sonar:sonar'
+    stages {
+        stage('📥 Checkout') {
+            steps {
+                // Clone the GitHub repo using stored credentials
+                git credentialsId: "${GIT_CREDENTIALS_ID}", url: 'https://github.com/Jayanth9632/myapp.git'
+            }
         }
-      }
-    }
 
-    stage('Build') {
-      steps {
-        sh 'mvn clean package'
-      }
-    }
+        stage('🔍 SonarQube Analysis') {
+            steps {
+                // Run static code analysis
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh 'mvn clean verify sonar:sonar'
+                }
+            }
+        }
 
-    stage('Trivy Scan') {
-      steps {
-        sh 'chmod +x scripts/trivy-scan.sh'
-        sh './scripts/trivy-scan.sh'
-      }
-    }
+        stage('⚙️ Build') {
+            steps {
+                // Compile and package the Spring Boot app
+                sh 'mvn clean package'
+            }
+        }
 
-    stage('Docker Build & Push') {
-      steps {
-        sh 'docker build -t ${DOCKER_IMAGE} .'
-        sh 'docker push ${DOCKER_IMAGE}'
-      }
-    }
+        stage('🛡️ Trivy Scan') {
+            steps {
+                // Run vulnerability scan on Docker image
+                sh 'chmod +x scripts/trivy-scan.sh'
+                sh './scripts/trivy-scan.sh'
+            }
+        }
 
-    stage('Kubernetes Deploy') {
-      steps {
-        sh 'chmod +x scripts/kubernetes-deploy.sh'
-        sh './scripts/kubernetes-deploy.sh'
-      }
+        stage('🐳 Docker Build & Push') {
+            steps {
+                // Login and push Docker image securely
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker build -t ${DOCKER_IMAGE} .
+                        docker push ${DOCKER_IMAGE}
+                    """
+                }
+            }
+        }
+
+        stage('🚀 Kubernetes Deploy') {
+            steps {
+                // Deploy to Kubernetes cluster
+                sh 'chmod +x scripts/kubernetes-deploy.sh'
+                sh './scripts/kubernetes-deploy.sh'
+            }
+        }
     }
-  }
 }
