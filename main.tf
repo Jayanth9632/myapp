@@ -34,7 +34,7 @@ resource "aws_security_group" "jenkins_sg" {
 }
 
 resource "aws_instance" "jenkins_ec2" {
-  ami                    = "ami-0f5ee92e2d63afc18"  # Ubuntu 22.04 LTS (x86_64) in ap-south-1
+  ami                    = "ami-0f5ee92e2d63afc18"  # ✅ Verified for ap-south-1
   instance_type          = var.instance_type
   key_name               = aws_key_pair.jenkins_key.key_name
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
